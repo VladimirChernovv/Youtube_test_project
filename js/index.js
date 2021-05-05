@@ -4,10 +4,15 @@ const CLIENT_ID = '851257692097-qqs73cktkbf0r6unmp2p1iegv9va88b6.apps.googleuser
 const gloAcademyList = document.querySelector('.glo-academy-list');
 const trendingList = document.querySelector('.trending-list');
 const musicList = document.querySelector('.music-list');
+const navMenuMore = document.querySelector('.nav-menu-more');
+const showMenuMore = document.querySelector('.show-more');
+
+showMenuMore.addEventListener('click', (event) => {
+	event.preventDefault();
+	navMenuMore.classList.toggle('nav-menu-more-show');
+});
 
 const createCard = (dataVideo) => {
-	
-
 	const imgUrl = dataVideo.snippet.thumbnails.high.url;
 	const videoId = typeof dataVideo.id === 'string' ? dataVideo.id : dataVideo.id.videoId;
 	const titleVideo = dataVideo.snippet.title;
@@ -45,10 +50,6 @@ const createList = (warpper, listVideo) => {
 	});
 };
 
-createList(gloAcademyList, gloAcademy);
-createList(trendingList, trending);
-createList(musicList, music);
-
 // YouTubeAPI
 const authBtn = document.querySelector('.auth-btn');
 const userAvatar = document.querySelector('.user-avatar');
@@ -58,8 +59,6 @@ const handleSuccessAuth = data => {
 	userAvatar.classList.remove('hide');
 	userAvatar.src = data.getImageUrl();
 	userAvatar.alt = data.getName();
-
-	getChanel();
 };
 
 const handleNoAuth = () => {
@@ -97,13 +96,18 @@ function initClient() {
 		'clientId': CLIENT_ID,
 		'scope': 'https://www.googleapis.com/auth/youtube.readonly',
 		'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
-  }).then(() => {
+  })
+	.then(() => {
 		updateStatusAuth(gapi.auth2.getAuthInstance());
 		authBtn.addEventListener('click', handleAuth);
     userAvatar.addEventListener('click', handleSignOut);
 
-	});
-};
+	})
+	.then(loadScreen)
+	.catch(e => {
+		console.warn(e);
+	})
+}; 
 
 // Делаем инициализацию
 gapi.load('client:auth2', initClient);
@@ -118,4 +122,24 @@ const getChanel = () => {
   }).execute((response) => {
 		console.log(response);
 	})
+};
+
+const requestVideos = (channelId, callback, maxResults = 6) => {
+	gapi.client.youtube.search.list({
+		part: 'snippet',
+		channelId,
+		maxResults,
+		order: 'date',
+	}).execute(response => {
+		callback(response.items);
+	});
+};
+
+const loadScreen = () => {
+	requestVideos('UC2L7vR43LKuBXXV2AentEMw', data => {
+		createList(gloAcademyList, data);
+	});
+	
+  createList(trendingList, trending);
+  createList(musicList, music);
 };
